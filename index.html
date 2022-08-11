@@ -20,7 +20,8 @@
             <h1 class="display-4"> Send Message</h1>
 
             <div class="container m-2">
-                <input class="form-control mb-2" placeholder="Name">
+                <input id="name" class="form-control mb-2" placeholder="Name">
+                <textarea id="message" class="form-control mb-2" placeholder="Message"></textarea>
                 <button id="send" class="btn btn-success">Send</button>
             </div>
         </div>
@@ -32,14 +33,16 @@
     <!-- Optional JavaScript; choose one of the two! -->
     <script>
         $(() => {
-            var msg = {
-                name: 'Tim',
-                meaage: 'This is a message'
-            }
-
             $('#send').click(() => {
-                addMessage(msg);
+                console.log('Clicked!');
+                let msg = {
+                    name: $('#name').val(),
+                    message: $('#message').val()
+                }
+                postMessage(msg);
             });
+
+           getMessages();
             
         });
 
@@ -50,6 +53,17 @@
                 <p> ${message.message}</p>
                 `
             );
+        }
+        // show messages
+        function getMessages(){
+            $.get('http://localhost:8070/messages/', (data) => {
+                data.forEach(addMessage);
+            });
+        }
+
+        
+        function postMessage(message){
+            $.post('http://localhost:8070/messages/', message);
         }
 
     </script>
