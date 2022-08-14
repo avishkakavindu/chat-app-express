@@ -9,10 +9,6 @@ const mongoose = require('mongoose');
 
 const PORT = 8070;
 
-var messages = [
-    {name: 'Tim', message: 'hi'},
-    {name: 'John', message: 'hello'}
-]
 
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
@@ -25,18 +21,37 @@ const DB_PASSWORD = process.env.PASSWORD;
 
 const dbUrl = `mongodb+srv://user:${DB_PASSWORD}@cluster0.qyekysk.mongodb.net/?retryWrites=true&w=majority`;
 
+// Mongoose Schema
+const Schema = mongoose.Schema;
+
+const messageSchema = new Schema({
+    name: String,
+    message: String
+});
+
+// Compile Message model
+const Message = mongoose.model('Message', messageSchema);
+
 // get messages
 app.get('/messages', (req, res) => {
-    res.send(messages);
+    Message.find({}, (err, messages) => {
+        res.send(messages);
+    });
 });
 
 // create message
 app.post('/messages', (req, res) => {
-    messages.push(req.body);
+    let message = new Message(req.body);
+    message.save((err) => {
+        if (err) {
+            sendStatus(500);
+        }
+        console.log('Message saved into DB!');
+        io.emit('message', req.body);
+        res.sendStatus(200);
+    });
 
-    io.emit('message', req.body)
-
-    res.sendStatus(200);
+    
 });
 
 io.on('connection', (socket) => {
