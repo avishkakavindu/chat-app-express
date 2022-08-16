@@ -42,27 +42,27 @@ app.get('/messages', (req, res) => {
 });
 
 // create message
-app.post('/messages', (req, res) => {
+app.post('/messages', async(req, res) => {
     let message = new Message(req.body);
    
-    message.save()
-    .then(() => {
-       console.log('saved');
-       return Message.findOne({message: 'badword'});
-    })
-    .then(censored =>{ // above then will return the record(censored) so following then can do the rest
-        if(censored) {
-            console.log('Censored word found', censored);
-            return Message.deleteOne({_id: censored.id});
-        }  
-        console.log('Message saved into DB!');
+    let savedMessage = await message.save()
+
+    console.log('saved');
+
+    let censored = await Message.findOne({message: 'badword'});
+    
+    if(censored) {
+        await Message.deleteOne({_id: censored.id});
+    }else {
         io.emit('message', req.body);
-        res.sendStatus(200);      
-    })
-    .catch((err) => {
-        response.sendStatus(500);
-        return console.error();
-    });
+    }      
+    
+    res.sendStatus(200);      
+    
+    // .catch((err) => {
+    //     response.sendStatus(500);
+    //     return console.error();
+    // });
 
     
 });
