@@ -19,6 +19,8 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 const DB_PASSWORD = process.env.PASSWORD;
 
+mongoose.Promise = Promise;
+
 const dbUrl = `mongodb+srv://user:${DB_PASSWORD}@cluster0.qyekysk.mongodb.net/?retryWrites=true&w=majority`;
 
 // Mongoose Schema
@@ -42,13 +44,24 @@ app.get('/messages', (req, res) => {
 // create message
 app.post('/messages', (req, res) => {
     let message = new Message(req.body);
-    message.save((err) => {
-        if (err) {
-            sendStatus(500);
-        }
+   
+    message.save()
+    .then(() => {
+       console.log('saved');
+       return Message.findOne({message: 'badword'});
+    })
+    .then(censored =>{ // above then will return the record(censored) so following then can do the rest
+        if(censored) {
+            console.log('Censored word found', censored);
+            return Message.deleteOne({_id: censored.id});
+        }  
         console.log('Message saved into DB!');
         io.emit('message', req.body);
-        res.sendStatus(200);
+        res.sendStatus(200);      
+    })
+    .catch((err) => {
+        response.sendStatus(500);
+        return console.error();
     });
 
     
