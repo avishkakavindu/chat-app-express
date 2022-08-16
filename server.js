@@ -43,28 +43,31 @@ app.get('/messages', (req, res) => {
 
 // create message
 app.post('/messages', async(req, res) => {
-    let message = new Message(req.body);
+
+    try {
+
+        let message = new Message(req.body);
    
-    let savedMessage = await message.save()
-
-    console.log('saved');
-
-    let censored = await Message.findOne({message: 'badword'});
+        let savedMessage = await message.save()
     
-    if(censored) {
-        await Message.deleteOne({_id: censored.id});
-    }else {
-        io.emit('message', req.body);
-    }      
+        console.log('saved');
     
-    res.sendStatus(200);      
-    
-    // .catch((err) => {
-    //     response.sendStatus(500);
-    //     return console.error();
-    // });
-
-    
+        let censored = await Message.findOne({message: 'badword'});
+        
+        if(censored) {
+            await Message.deleteOne({_id: censored.id});
+        }else {
+            io.emit('message', req.body);
+        }      
+        
+        res.sendStatus(200);   
+    } catch (err) {
+        res.sendStatus(500);
+        return console.error(err);
+    } finally {
+        // this block will run no matter what
+        console.log('Post called!');
+    }    
 });
 
 io.on('connection', (socket) => {
