@@ -70,6 +70,15 @@ app.post('/messages', async(req, res) => {
     }    
 });
 
+// get messages belongs to particular user by username
+app.get('/messages/:user', (req, res) => {
+    let user = req.params.user;
+
+    Message.find({name: user}, (err, messages) => {
+        res.send(messages);
+    });
+});
+
 io.on('connection', (socket) => {
     console.log('User connected!');
 });
