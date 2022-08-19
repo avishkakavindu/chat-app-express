@@ -7,6 +7,7 @@ const io = require('socket.io')(http);
 const cors = require("cors");
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const PORT = 8070;
 
@@ -19,6 +20,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 
 const DB_PASSWORD = process.env.PASSWORD;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 mongoose.Promise = Promise;
 
@@ -42,6 +44,41 @@ const User = mongoose.model('User', userSchema);
 
 // Compile Message model
 const Message = mongoose.model('Message', messageSchema);
+
+// login
+app.post('/login', async(req, res) => {
+    const { username, password } = req.body;
+ 
+    const user = await User.findOne({username: username});
+
+    let context = {
+        status: 'error',
+        error: 'Invalid username/password'    
+    }
+
+    if (!user) {
+        return res.json(context);
+    }
+
+    if (await bcrypt.compare(password, user.password)) {
+        const token = jwt.sign(
+            {
+                id: user._id,
+                username: user.username 
+            },
+            JWT_SECRET
+        );
+
+        context = {
+            status: 200,
+            data: token
+        }
+        
+        return res.json(context);
+    }
+
+    return res.json(context);
+});
 
 // register
 app.post('/register', async(req, res) => {
