@@ -128,6 +128,33 @@ app.post('/register', async(req, res) => {
     return res.status(200);
 });
 
+// authenticate user by jwt
+
+app.post('/verify-me', async (req, res) => {
+    const { token } = req.body;
+    try{
+        // check token validity
+        const user = jwt.verify(token, JWT_SECRET); // will return the encoded data (user_id, username)
+        
+        context = {
+            status: 200,
+            data: token
+        }
+        
+        return res.json(context);
+
+    } catch (error) {
+        if (error instanceof jwt.JsonWebTokenError) {
+			// if the error thrown is because the JWT is unauthorized, return a 401 error
+			
+            return res.status(401).end();
+		}
+    }  
+    // otherwise, return a bad request error
+	return res.status(400).end()
+
+});
+
 // get messages
 app.get('/messages', (req, res) => {
     Message.find({}, (err, messages) => {
@@ -166,6 +193,7 @@ app.post('/messages', async(req, res) => {
 
 // get messages belongs to particular user by username
 app.get('/messages/:user', (req, res) => {
+
     let user = req.params.user;
 
     Message.find({name: user}, (err, messages) => {

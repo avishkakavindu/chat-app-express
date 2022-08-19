@@ -29,13 +29,36 @@
             <button id="reg-btn" type="submit" class="btn btn-primary">Login</button>
           </form>
     </div>
+    <button id="verify-me-btn" type="button" class="btn btn-primary">Verify Me</button>
 
     <!-- Optional JavaScript; choose one of the two! -->
     <script>
         $(() => {
             const form = document.getElementById('reg-form');
-            form.addEventListener('submit', register);
+            form.addEventListener('submit', login);
+            
+            $('#verify-me-btn').click(() => {
+                verifyMe();
+            });
 
+            async function verifyMe() {
+                const result = await fetch('/verify-me', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                    token: localStorage.getItem('token')
+                    })
+                }).then((res) => res.json());
+            
+                if(result.status === 200){
+                    console.log('Token: ', result.data);
+                    alert('Success! You\'re authenticated User');
+                } else {
+                    alert(result.error);
+                }
+            }
 
             $('#send').click(() => {
                 console.log('Clicked!');
@@ -49,7 +72,7 @@
            getMessages();       
         });
 
-        async function register(event){
+        async function login(event){
             event.preventDefault();
             const username = $('#username').val();
             const password = $('#password1').val();        
@@ -67,6 +90,8 @@
             
             if(result.status === 200){
                 console.log('Token: ', result.data);
+                // XSS vunerable method
+                localStorage.setItem('token', result.data);
                 alert('Success!');
             } else {
                 alert(result.error);
