@@ -6,6 +6,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const cors = require("cors");
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const PORT = 8070;
 
@@ -31,8 +32,64 @@ const messageSchema = new Schema({
     message: String
 });
 
+const userSchema = new Schema({
+    username: {type: String, required: true, unique: true},
+    password: {type: String, required: true}
+})
+
+// compile User model
+const User = mongoose.model('User', userSchema);
+
 // Compile Message model
 const Message = mongoose.model('Message', messageSchema);
+
+// register
+app.post('/register', async(req, res) => {
+    let  { username, password } = req.body;
+
+    if (!username || typeof username!== 'string') {
+        let context = {
+            status: 'error',
+            error: 'Invalid username format!'
+        }
+        return res.json(context);
+    }
+    if (!username || typeof username!== 'string') {
+        let context = {
+            status: 'error',
+            error: 'Invalid password format!'
+        }
+        return res.json(context);
+    }
+    if (password.length < 5) {
+        let context = {
+            status: 'error',
+            error: 'Password length need to exceed 4 letters'
+        }
+        return res.json(context);
+    }
+
+    // console.log('prev:', password);
+    password = await bcrypt.hash(password, 10);
+   
+    try {
+        const response = await User.create({
+            username,
+            password
+        });
+        console.log(response);
+    } catch (error) {
+        if (error.code === 11000) {
+            let context = {
+                status: 'error',
+                error: 'Username already taken!'
+            }
+            return res.json(context);
+        }
+        throw error;
+    }
+    return res.status(200);
+});
 
 // get messages
 app.get('/messages', (req, res) => {
